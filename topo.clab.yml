@@ -1,0 +1,121 @@
+name: twamp
+# topology based on 16 nodes
+# different platform types include 7750 and 7250 based on SROS
+
+mgmt:
+  network: net3         # management network name
+  ipv4-subnet: 172.20.20.0/24       # ipv4 range
+
+topology:
+  defaults:
+    kind: nokia_sros
+  kinds:
+    nokia_sros:
+      image: vrnetlab/vr-sros:24.3.R1
+      license: ./license-sros24.txt
+    linux:
+      image: ghcr.io/mfzhsn/network-multitool-sshd:0.0.2
+  nodes:
+    ce: #IXR-ec
+      kind: nokia_sros
+      type: ixr-ec
+      #startup-config: ./config/ce.cfg
+      mgmt-ipv4: 172.20.20.101
+      ports:
+        - 50101:22
+        - 50102:57400
+        - 50103:830  
+    cpe: #IXR-e2c
+      kind: nokia_sros
+      type: ixr-e2c   
+      #startup-config: ./config/cpe.cfg
+      mgmt-ipv4: 172.20.20.102
+      ports:
+        - 50201:22
+        - 50202:57400
+        - 50203:830  
+    agg: #IXR-e2
+      kind: nokia_sros
+      type: ixr-e2   
+      #startup-config: ./config/agg.cfg
+      mgmt-ipv4: 172.20.20.103
+      ports:
+        - 50301:22
+        - 50302:57400
+        - 50303:830
+    spe: #SR-1
+      kind: nokia_sros
+      type: sr-1
+      #startup-config: ./config/spe.cfg
+      mgmt-ipv4: 172.20.20.104
+      ports:
+        - 50401:22
+        - 50402:57400
+        - 50403:830
+    coi-l2: #SR-1
+      kind: nokia_sros
+      type: sr-1
+      #startup-config: ./config/coi-l2.cfg
+      mgmt-ipv4: 172.20.20.105
+      ports:
+        - 50501:22
+        - 50502:57400
+        - 50503:830
+    coi-l3: #SR-1
+      kind: nokia_sros
+      type: sr-1
+      #startup-config: ./config/coi-l3.cfg
+      mgmt-ipv4: 172.20.20.106
+      ports:
+        - 50601:22
+        - 50602:57400
+        - 50603:830
+    peering: #SR-1
+      kind: nokia_sros
+      type: sr-1
+      #startup-config: ./config/peering.cfg
+      mgmt-ipv4: 172.20.20.107
+      ports:
+        - 50701:22
+        - 50702:57400
+        - 50703:830
+    reflector: #IXR-e2
+      kind: nokia_sros
+      type: ixr-e2
+      #startup-config: ./config/reflector.cfg
+      mgmt-ipv4: 172.20.20.108
+      ports:
+        - 50801:22
+        - 50802:57400
+        - 50803:830
+    tester1:
+      kind: linux
+      mgmt-ipv4: 172.20.20.120
+      exec:
+        - ip link add link eth1 name eth1.10 type vlan id 10
+        - ifconfig eth1.10 192.168.0.1
+        - ifconfig eth1.10 netmask 255.255.255.0 
+    tester2:
+      kind: linux
+      mgmt-ipv4: 172.20.20.121
+      exec:
+        - ip link add link eth1 name eth1.10 type vlan id 10
+        - ifconfig eth1.10 192.168.0.2
+        - ifconfig eth1.10 netmask 255.255.255.0 
+        - ip link add link eth1 name eth1.20 type vlan id 20
+        - ifconfig eth1.20 192.168.200.2
+        - ifconfig eth1.20 netmask 255.255.255.0
+        - route add default gw 192.168.200.1 eth1.20 
+
+  links:
+  #Connections of the first ring 
+    - endpoints: ["tester1:eth1", "ce:eth1"]
+    - endpoints: ["ce:eth2", "cpe:eth1"]
+    - endpoints: ["cpe:eth2", "agg:eth1"]
+    - endpoints: ["agg:eth2", "spe:eth1"]
+    - endpoints: ["spe:eth2", "coi-l2:eth1"]
+    - endpoints: ["coi-l2:eth2", "coi-l3:eth1"]
+    - endpoints: ["coi-l3:eth2", "peering:eth1"]
+    - endpoints: ["peering:eth2", "reflector:eth1"]
+    - endpoints: ["peering:eth3", "tester2:eth1"]
+
