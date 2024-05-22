@@ -92,20 +92,18 @@ topology:
       kind: linux
       mgmt-ipv4: 172.20.20.120
       exec:
-        - ip link add link eth1 name eth1.10 type vlan id 10
-        - ifconfig eth1.10 192.168.0.1
-        - ifconfig eth1.10 netmask 255.255.255.0 
+        - ip link add link eth1 name eth1.1000 type vlan id 1000
+        - ifconfig eth1.1000 172.16.0.2
+        - ifconfig eth1.1000 netmask 255.255.255.0 
+        - route add default gw 172.16.0.1 eth1.1000
     tester2:
       kind: linux
       mgmt-ipv4: 172.20.20.121
       exec:
-        - ip link add link eth1 name eth1.10 type vlan id 10
-        - ifconfig eth1.10 192.168.0.2
-        - ifconfig eth1.10 netmask 255.255.255.0 
-        - ip link add link eth1 name eth1.20 type vlan id 20
-        - ifconfig eth1.20 192.168.200.2
-        - ifconfig eth1.20 netmask 255.255.255.0
-        - route add default gw 192.168.200.1 eth1.20 
+        - ip link add link eth1 name eth1.1000 type vlan id 1000
+        - ifconfig eth1.1000 192.168.200.2
+        - ifconfig eth1.1000 netmask 255.255.255.0 
+        - route add default gw 192.168.200.1 eth1.1000
 
   links:
   #Connections of the first ring 
