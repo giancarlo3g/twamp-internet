@@ -79,10 +79,10 @@ topology:
         - 50701:22
         - 50702:57400
         - 50703:830
-    reflector: #IXR-e2
+    originator: #IXR-e2
       kind: nokia_sros
       type: ixr-e2
-      #startup-config: ./config/reflector.cfg
+      #startup-config: ./config/originator.cfg
       mgmt-ipv4: 172.20.20.108
       ports:
         - 50801:22
@@ -114,6 +114,6 @@ topology:
     - endpoints: ["spe:eth2", "coi-l2:eth1"]
     - endpoints: ["coi-l2:eth2", "coi-l3:eth1"]
     - endpoints: ["coi-l3:eth2", "peering:eth1"]
-    - endpoints: ["peering:eth2", "reflector:eth1"]
+    - endpoints: ["peering:eth2", "originator:eth1"]
     - endpoints: ["peering:eth3", "tester2:eth1"]
 
