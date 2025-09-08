@@ -1,0 +1,127 @@
+{
+  "freeTextAnnotations": [],
+  "groupStyleAnnotations": [],
+  "cloudNodeAnnotations": [],
+  "nodeAnnotations": [
+    {
+      "id": "ce",
+      "icon": "router",
+      "position": {
+        "x": 245,
+        "y": 399
+      },
+      "geoCoordinates": {
+        "lat": 48.70536544427532,
+        "lng": 9.06170588872341
+      }
+    },
+    {
+      "id": "cpe",
+      "icon": "router",
+      "position": {
+        "x": 329,
+        "y": 399
+      },
+      "geoCoordinates": {
+        "lat": 48.90766719632718,
+        "lng": 9.411864420378231
+      }
+    },
+    {
+      "id": "agg",
+      "icon": "router",
+      "position": {
+        "x": 413,
+        "y": 399
+      },
+      "geoCoordinates": {
+        "lat": 49.0914907852613,
+        "lng": 9.375667489656756
+      }
+    },
+    {
+      "id": "spe",
+      "icon": "router",
+      "position": {
+        "x": 497,
+        "y": 399
+      },
+      "geoCoordinates": {
+        "lat": 49.43232011137016,
+        "lng": 9.679934876930474
+      }
+    },
+    {
+      "id": "coi-l2",
+      "icon": "router",
+      "position": {
+        "x": 581,
+        "y": 399
+      },
+      "geoCoordinates": {
+        "lat": 49.39616970822468,
+        "lng": 9.73274046129424
+      }
+    },
+    {
+      "id": "coi-l3",
+      "icon": "router",
+      "position": {
+        "x": 665,
+        "y": 399
+      },
+      "geoCoordinates": {
+        "lat": 48.70144521204577,
+        "lng": 9.827099867109652
+      }
+    },
+    {
+      "id": "peering",
+      "icon": "router",
+      "position": {
+        "x": 763,
+        "y": 399
+      },
+      "geoCoordinates": {
+        "lat": 49.16445343168382,
+        "lng": 9.256820818946535
+      }
+    },
+    {
+      "id": "originator",
+      "icon": "router",
+      "position": {
+        "x": 763,
+        "y": 329
+      },
+      "geoCoordinates": {
+        "lat": 49.183679813287206,
+        "lng": 9.741285268582844
+      }
+    },
+    {
+      "id": "tester1",
+      "icon": "router",
+      "position": {
+        "x": 245,
+        "y": 483
+      },
+      "geoCoordinates": {
+        "lat": 48.87200402989597,
+        "lng": 9.202585873362375
+      }
+    },
+    {
+      "id": "tester2",
+      "icon": "router",
+      "position": {
+        "x": 763,
+        "y": 483
+      },
+      "geoCoordinates": {
+        "lat": 49.14090171794783,
+        "lng": 9.446337836815418
+      }
+    }
+  ]
+}

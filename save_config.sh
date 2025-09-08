@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# List of files to check
+if [ ! -d ./config ]; then
+  mkdir -p ./config
+fi
+
+
 yes | cp ./clab-twamp/ce/A/config/cf3/config.cfg ./config/ce.cfg
 yes | cp ./clab-twamp/cpe/A/config/cf3/config.cfg ./config/cpe.cfg
 yes | cp ./clab-twamp/agg/A/config/cf3/config.cfg ./config/agg.cfg
