@@ -1,0 +1,275 @@
+configure {
+    apply-groups ["LLDP-DEFAULT"]
+    groups {
+        group "CONNECTOR" {
+            port "<.*>" {
+                admin-state enable
+                connector {
+                    breakout c1-100g
+                }
+            }
+        }
+        group "LLDP-DEFAULT" {
+            port "<.*>" {
+                ethernet {
+                    lldp {
+                        dest-mac nearest-bridge {
+                            receive true
+                            transmit true
+                            tx-tlvs {
+                                port-desc true
+                                sys-name true
+                                sys-desc true
+                                sys-cap true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        group "NETWORK-INTERFACE" {
+            router "Base" {
+                interface "<to.*>" {
+                    ipv4 {
+                        unnumbered {
+                            system
+                        }
+                    }
+                }
+            }
+        }
+        group "PORT-ACCESS" {
+            port "<.*>" {
+                admin-state enable
+                ethernet {
+                    mode access
+                    encap-type dot1q
+                }
+            }
+        }
+        group "PORT-NETWORK" {
+            port "<.*>" {
+                admin-state enable
+                ethernet {
+                    mode network
+                    encap-type null
+                }
+            }
+        }
+    }
+    card 1 {
+        card-type iom-1
+        mda 1 {
+            mda-type me6-100gb-qsfp28
+        }
+    }
+    log {
+        filter "1001" {
+            named-entry "10" {
+                description "Collect only events of major severity or higher"
+                action forward
+                match {
+                    severity {
+                        gte major
+                    }
+                }
+            }
+        }
+        log-id "99" {
+            description "Default System Log"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+        log-id "100" {
+            description "Default Serious Errors Log"
+            filter "1001"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+    }
+    port 1/1/c1 {
+        admin-state enable
+        connector {
+            breakout c1-100g
+        }
+    }
+    port 1/1/c1/1 {
+        apply-groups ["PORT-NETWORK"]
+    }
+    port 1/1/c2 {
+        admin-state enable
+        connector {
+            breakout c1-100g
+        }
+    }
+    port 1/1/c2/1 {
+        apply-groups ["PORT-NETWORK"]
+    }
+    router "Base" {
+        apply-groups ["NETWORK-INTERFACE"]
+        interface "system" {
+            ipv4 {
+                primary {
+                    address 4.4.4.4
+                    prefix-length 32
+                }
+            }
+        }
+        interface "toAGG" {
+            port 1/1/c1/1
+        }
+        interface "toCOI-L2" {
+            port 1/1/c2/1
+        }
+        isis 0 {
+            admin-state enable
+            level-capability 2
+            standard-multi-instance true
+            traffic-engineering true
+            area-address [49.1011.1111.11]
+            interface "system" {
+            }
+            interface "toCOI-L2" {
+                interface-type point-to-point
+            }
+            level 2 {
+                wide-metrics-only true
+            }
+        }
+        isis 1 {
+            admin-state enable
+            level-capability 1
+            standard-multi-instance true
+            traffic-engineering true
+            area-address [49.1011.1111.11]
+            interface "system" {
+            }
+            interface "toAGG" {
+                interface-type point-to-point
+            }
+            level 1 {
+                wide-metrics-only true
+            }
+        }
+        ldp {
+            admin-state enable
+        }
+        mpls {
+            admin-state enable
+            interface "system" {
+            }
+            interface "toAGG" {
+            }
+            interface "toCOI-L2" {
+            }
+            path "FOLLOW-IGP" {
+                admin-state enable
+            }
+            lsp "toCOI-L2" {
+                admin-state enable
+                type p2p-rsvp
+                to 5.5.5.5
+                path-computation-method local-cspf
+                fast-reroute {
+                    frr-method facility
+                }
+                primary "FOLLOW-IGP" {
+                }
+            }
+            lsp "toCPE" {
+                admin-state enable
+                type p2p-rsvp
+                to 2.2.2.2
+                path-computation-method local-cspf
+                fast-reroute {
+                    frr-method facility
+                }
+                primary "FOLLOW-IGP" {
+                }
+            }
+        }
+        rsvp {
+            admin-state enable
+            interface "system" {
+            }
+            interface "toAGG" {
+            }
+            interface "toCOI-L2" {
+            }
+        }
+    }
+    service {
+        epipe "CPE-COI" {
+            admin-state enable
+            service-id 3000
+            customer "1"
+            vc-switching true
+            service-mtu 1514
+            spoke-sdp 2:3000 {
+                control-word true
+                vc-type vlan
+            }
+            spoke-sdp 5:3000 {
+                control-word true
+                vc-type vlan
+            }
+        }
+        epipe "twamp" {
+            admin-state enable
+            service-id 2000
+            customer "1"
+            vc-switching true
+            service-mtu 1514
+            spoke-sdp 2:2000 {
+            }
+            spoke-sdp 5:2000 {
+            }
+        }
+        sdp 2 {
+            admin-state enable
+            delivery-type mpls
+            far-end {
+                ip-address 2.2.2.2
+            }
+            lsp "toCPE" { }
+        }
+        sdp 5 {
+            admin-state enable
+            delivery-type mpls
+            far-end {
+                ip-address 5.5.5.5
+            }
+            lsp "toCOI-L2" { }
+        }
+    }
+    system {
+        security {
+            user-params {
+                local-user {
+                    user "grpc" {
+                        password telemetry
+                        access {
+                            netconf true
+                            grpc true
+                        }
+                        console {
+                            member ["administrative"]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

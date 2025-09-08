@@ -1,0 +1,238 @@
+configure {
+    apply-groups ["LLDP-DEFAULT"]
+    groups {
+        group "CONNECTOR" {
+            port "<.*>" {
+                admin-state enable
+                connector {
+                    breakout c1-100g
+                }
+            }
+        }
+        group "LLDP-DEFAULT" {
+            port "<.*>" {
+                ethernet {
+                    lldp {
+                        dest-mac nearest-bridge {
+                            receive true
+                            transmit true
+                            tx-tlvs {
+                                port-desc true
+                                sys-name true
+                                sys-desc true
+                                sys-cap true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        group "NETWORK-INTERFACE" {
+            router "Base" {
+                interface "<to.*>" {
+                    ipv4 {
+                        unnumbered {
+                            system
+                        }
+                    }
+                }
+            }
+        }
+        group "PORT-ACCESS" {
+            port "<.*>" {
+                admin-state enable
+                ethernet {
+                    mode access
+                    encap-type dot1q
+                }
+            }
+        }
+        group "PORT-NETWORK" {
+            port "<.*>" {
+                admin-state enable
+                ethernet {
+                    mode network
+                    encap-type null
+                }
+            }
+        }
+    }
+    card 1 {
+        card-type imm12-sfp28+2-qsfp28
+        mda 1 {
+            mda-type m12-sfp28+2-qsfp28
+        }
+    }
+    log {
+        filter "1001" {
+            named-entry "10" {
+                description "Collect only events of major severity or higher"
+                action forward
+                match {
+                    severity {
+                        gte major
+                    }
+                }
+            }
+        }
+        log-id "99" {
+            description "Default System Log"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+        log-id "100" {
+            description "Default Serious Errors Log"
+            filter "1001"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+    }
+    policy-options {
+        prefix-list "LAN" {
+            prefix 172.16.0.0/24 type exact {
+            }
+        }
+        policy-statement "export-LAN" {
+            entry 10 {
+                from {
+                    prefix-list ["LAN"]
+                    protocol {
+                        name [direct]
+                    }
+                }
+                action {
+                    action-type accept
+                }
+            }
+        }
+    }
+    port 1/1/c1 {
+        admin-state enable
+        connector {
+            breakout c1-10g
+        }
+    }
+    port 1/1/c1/1 {
+        apply-groups ["PORT-ACCESS"]
+        ethernet {
+            mode network
+            encap-type dot1q
+        }
+    }
+    port 1/1/c2 {
+        admin-state enable
+        connector {
+            breakout c1-10g
+        }
+    }
+    port 1/1/c2/1 {
+        apply-groups ["PORT-NETWORK"]
+        ethernet {
+            encap-type dot1q
+        }
+    }
+    port 1/1/c3 {
+    }
+    port 1/1/c4 {
+    }
+    port 1/1/c5 {
+    }
+    port 1/1/c6 {
+    }
+    port 1/1/c7 {
+    }
+    port 1/1/c8 {
+    }
+    port 1/1/c9 {
+    }
+    port 1/1/c10 {
+    }
+    port 1/1/c11 {
+    }
+    port 1/1/c12 {
+    }
+    port 1/1/c13 {
+    }
+    port 1/1/c14 {
+    }
+    router "Base" {
+        autonomous-system 65100
+        interface "system" {
+            ipv4 {
+                primary {
+                    address 1.1.1.1
+                    prefix-length 32
+                }
+            }
+        }
+        interface "toCPE" {
+            port 1/1/c2/1:1000
+            ipv4 {
+                primary {
+                    address 192.168.100.2
+                    prefix-length 29
+                }
+            }
+        }
+        interface "toLAN" {
+            port 1/1/c1/1:1000
+            ipv4 {
+                primary {
+                    address 172.16.0.1
+                    prefix-length 24
+                }
+            }
+        }
+        bgp {
+            admin-state enable
+            ebgp-default-reject-policy {
+                import false
+            }
+            group "customer" {
+                next-hop-self true
+                type external
+                family {
+                    ipv4 true
+                }
+                export {
+                    policy ["export-LAN"]
+                }
+            }
+            neighbor "192.168.100.1" {
+                group "customer"
+                peer-as 65000
+            }
+        }
+    }
+    system {
+        security {
+            user-params {
+                local-user {
+                    user "grpc" {
+                        password telemetry
+                        access {
+                            netconf true
+                            grpc true
+                        }
+                        console {
+                            member ["administrative"]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

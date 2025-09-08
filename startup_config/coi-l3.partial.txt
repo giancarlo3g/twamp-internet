@@ -1,0 +1,307 @@
+configure {
+    apply-groups ["LLDP-DEFAULT"]
+    groups {
+        group "CONNECTOR" {
+            port "<.*>" {
+                admin-state enable
+                connector {
+                    breakout c1-100g
+                }
+            }
+        }
+        group "LLDP-DEFAULT" {
+            port "<.*>" {
+                ethernet {
+                    lldp {
+                        dest-mac nearest-bridge {
+                            receive true
+                            transmit true
+                            tx-tlvs {
+                                port-desc true
+                                sys-name true
+                                sys-desc true
+                                sys-cap true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        group "NETWORK-INTERFACE" {
+            router "Base" {
+                interface "<to.*>" {
+                    ipv4 {
+                        unnumbered {
+                            system
+                        }
+                    }
+                }
+            }
+        }
+        group "PORT-ACCESS" {
+            port "<.*>" {
+                admin-state enable
+                ethernet {
+                    mode access
+                    encap-type dot1q
+                }
+            }
+        }
+        group "PORT-NETWORK" {
+            port "<.*>" {
+                admin-state enable
+                ethernet {
+                    mode network
+                    encap-type null
+                }
+            }
+        }
+    }
+    card 1 {
+        card-type iom-1
+        mda 1 {
+            mda-type me6-100gb-qsfp28
+        }
+    }
+    log {
+        filter "1001" {
+            named-entry "10" {
+                description "Collect only events of major severity or higher"
+                action forward
+                match {
+                    severity {
+                        gte major
+                    }
+                }
+            }
+        }
+        log-id "99" {
+            description "Default System Log"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+        log-id "100" {
+            description "Default Serious Errors Log"
+            filter "1001"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+    }
+    policy-options {
+        prefix-list "TWAMP-Originator" {
+            prefix 2001::f:0/127 type exact {
+            }
+        }
+        prefix-list "TWAMP-Reflector" {
+            prefix 2001::a:0/127 type exact {
+            }
+        }
+        prefix-list "customers" {
+            prefix 192.168.100.0/29 type exact {
+            }
+        }
+        prefix-list "public" {
+            prefix 192.168.200.0/24 type exact {
+            }
+        }
+        policy-statement "export-TWAMP-Originator" {
+            entry 10 {
+                from {
+                    prefix-list ["TWAMP-Originator"]
+                    protocol {
+                        name [bgp]
+                    }
+                }
+                action {
+                    action-type accept
+                }
+            }
+        }
+        policy-statement "export-customers" {
+            entry 10 {
+                from {
+                    prefix-list ["customers"]
+                    protocol {
+                        name [direct]
+                    }
+                }
+                action {
+                    action-type accept
+                }
+            }
+            entry 20 {
+                from {
+                    prefix-list ["TWAMP-Reflector"]
+                    protocol {
+                        name [direct]
+                    }
+                }
+                action {
+                    action-type accept
+                    next-hop 2001::b:0
+                }
+            }
+        }
+        policy-statement "export-public" {
+            entry 10 {
+                from {
+                    prefix-list ["public"]
+                    protocol {
+                        name [bgp]
+                    }
+                }
+                action {
+                    action-type accept
+                }
+            }
+        }
+    }
+    port 1/1/c1 {
+        admin-state enable
+        connector {
+            breakout c1-100g
+        }
+    }
+    port 1/1/c1/1 {
+        apply-groups ["PORT-ACCESS"]
+    }
+    port 1/1/c2 {
+        admin-state enable
+        connector {
+            breakout c1-100g
+        }
+    }
+    port 1/1/c2/1 {
+        apply-groups ["PORT-ACCESS"]
+    }
+    router "Base" {
+        autonomous-system 65000
+        interface "system" {
+            ipv4 {
+                primary {
+                    address 6.6.6.6
+                    prefix-length 32
+                }
+            }
+        }
+        bgp {
+            ebgp-default-reject-policy {
+                import false
+            }
+            group "customer" {
+                next-hop-self true
+                type external
+                family {
+                    ipv4 true
+                }
+                export {
+                    policy ["export-public"]
+                }
+            }
+            group "peering" {
+                next-hop-self true
+                type internal
+                family {
+                    ipv4 true
+                    ipv6 true
+                }
+                export {
+                    policy ["export-customers"]
+                }
+            }
+            group "twamp" {
+                next-hop-self true
+                type external
+                family {
+                    ipv6 true
+                }
+                export {
+                    policy ["export-TWAMP-Originator"]
+                }
+            }
+            neighbor "10.10.10.2" {
+                group "peering"
+            }
+            neighbor "192.168.100.2" {
+                group "customer"
+                peer-as 65100
+            }
+            neighbor "2001::a:1" {
+                group "twamp"
+                peer-as 65100
+            }
+        }
+    }
+    service {
+        ies "Internet" {
+            admin-state enable
+            service-id 1000
+            customer "1"
+            interface "toCOI-L2" {
+                sap 1/1/c1/1:1000 {
+                }
+                ipv4 {
+                    primary {
+                        address 192.168.100.1
+                        prefix-length 29
+                    }
+                }
+            }
+            interface "toPeering" {
+                sap 1/1/c2/1:1000 {
+                }
+                ipv4 {
+                    primary {
+                        address 10.10.10.1
+                        prefix-length 30
+                    }
+                }
+                ipv6 {
+                    address 2001::b:0 {
+                        prefix-length 127
+                    }
+                }
+            }
+            interface "toTWAMP-Reflector" {
+                sap 1/1/c1/1:2000 {
+                }
+                ipv6 {
+                    address 2001::a:0 {
+                        prefix-length 127
+                    }
+                }
+            }
+        }
+    }
+    system {
+        security {
+            user-params {
+                local-user {
+                    user "grpc" {
+                        password telemetry
+                        access {
+                            netconf true
+                            grpc true
+                        }
+                        console {
+                            member ["administrative"]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

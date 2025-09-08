@@ -1,0 +1,316 @@
+configure {
+    apply-groups ["LLDP-DEFAULT"]
+    groups {
+        group "CONNECTOR" {
+            port "<.*>" {
+                admin-state enable
+                connector {
+                    breakout c1-100g
+                }
+            }
+        }
+        group "LLDP-DEFAULT" {
+            port "<.*>" {
+                ethernet {
+                    lldp {
+                        dest-mac nearest-bridge {
+                            receive true
+                            transmit true
+                            tx-tlvs {
+                                port-desc true
+                                sys-name true
+                                sys-desc true
+                                sys-cap true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        group "NETWORK-INTERFACE" {
+            router "Base" {
+                interface "<to.*>" {
+                    ipv4 {
+                        unnumbered {
+                            system
+                        }
+                    }
+                }
+            }
+        }
+        group "PORT-ACCESS" {
+            port "<.*>" {
+                admin-state enable
+                ethernet {
+                    mode access
+                    encap-type dot1q
+                }
+            }
+        }
+        group "PORT-NETWORK" {
+            port "<.*>" {
+                admin-state enable
+                ethernet {
+                    mode network
+                    encap-type null
+                }
+            }
+        }
+    }
+    card 1 {
+        card-type imm12-sfp28+2-qsfp28
+        mda 1 {
+            mda-type m12-sfp28+2-qsfp28
+        }
+    }
+    log {
+        filter "1001" {
+            named-entry "10" {
+                description "Collect only events of major severity or higher"
+                action forward
+                match {
+                    severity {
+                        gte major
+                    }
+                }
+            }
+        }
+        log-id "99" {
+            description "Default System Log"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+        log-id "100" {
+            description "Default Serious Errors Log"
+            filter "1001"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+    }
+    oam-pm {
+        session "toPeering" {
+            ip {
+                destination 2001::f:1
+                destination-udp-port 64364
+                router-instance "twamp"
+                source 2001::a:1
+                twamp-light {
+                    admin-state enable
+                    test-id 100708
+                    interval 10000
+                    pad-size 5
+                    delay-template "LINK-DELAY-TEMPLATE"
+                    loss {
+                        hli-force-count true
+                    }
+                }
+            }
+        }
+        streaming {
+            delay-template "LINK-DELAY-TEMPLATE" {
+                admin-state enable
+                sample-window 15
+                window-integrity 10
+                fd-avg forward { }
+                fd-avg backward { }
+                fd-avg round-trip { }
+            }
+        }
+    }
+    port 1/1/c1 {
+        admin-state enable
+        connector {
+            breakout c1-10g
+        }
+    }
+    port 1/1/c1/1 {
+        apply-groups ["PORT-ACCESS"]
+    }
+    port 1/1/c2 {
+        admin-state enable
+        connector {
+            breakout c1-10g
+        }
+    }
+    port 1/1/c2/1 {
+        apply-groups ["PORT-NETWORK"]
+    }
+    port 1/1/c3 {
+    }
+    port 1/1/c4 {
+    }
+    port 1/1/c5 {
+    }
+    port 1/1/c6 {
+    }
+    port 1/1/c7 {
+    }
+    port 1/1/c8 {
+    }
+    port 1/1/c9 {
+    }
+    port 1/1/c10 {
+    }
+    port 1/1/c11 {
+    }
+    port 1/1/c12 {
+    }
+    port 1/1/c13 {
+    }
+    port 1/1/c14 {
+    }
+    router "Base" {
+        apply-groups ["NETWORK-INTERFACE"]
+        interface "system" {
+            ipv4 {
+                primary {
+                    address 2.2.2.2
+                    prefix-length 32
+                }
+            }
+        }
+        interface "toAGG" {
+            port 1/1/c2/1
+        }
+        isis 1 {
+            admin-state enable
+            level-capability 1
+            standard-multi-instance true
+            traffic-engineering true
+            area-address [49.1011.1111.11]
+            interface "system" {
+            }
+            interface "toAGG" {
+                interface-type point-to-point
+            }
+            level 1 {
+                wide-metrics-only true
+            }
+        }
+        ldp {
+            admin-state enable
+        }
+        mpls {
+            admin-state enable
+            interface "system" {
+            }
+            interface "toAGG" {
+            }
+            path "FOLLOW-IGP" {
+                admin-state enable
+            }
+            lsp "toSPE" {
+                admin-state enable
+                type p2p-rsvp
+                to 4.4.4.4
+                path-computation-method local-cspf
+                fast-reroute {
+                    frr-method facility
+                }
+                primary "FOLLOW-IGP" {
+                }
+            }
+        }
+        rsvp {
+            admin-state enable
+            interface "system" {
+            }
+            interface "toAGG" {
+            }
+        }
+    }
+    service {
+        epipe "CPE-COI" {
+            admin-state enable
+            service-id 3000
+            customer "1"
+            service-mtu 1514
+            spoke-sdp 4:3000 {
+                control-word true
+                vc-type vlan
+            }
+            sap 1/1/c1/1:1000 {
+            }
+        }
+        sdp 4 {
+            admin-state enable
+            delivery-type mpls
+            far-end {
+                ip-address 4.4.4.4
+            }
+            lsp "toSPE" { }
+        }
+        vprn "twamp" {
+            admin-state enable
+            description "Local VPRN service for TWAMP testing for Internet services"
+            service-id 2000
+            customer "1"
+            autonomous-system 65100
+            bgp {
+                admin-state enable
+                ebgp-default-reject-policy {
+                    import false
+                }
+                group "twamp" {
+                    next-hop-self true
+                    type external
+                    family {
+                        ipv6 true
+                    }
+                }
+                neighbor "2001::a:0" {
+                    group "twamp"
+                    peer-as 65000
+                }
+            }
+            interface "toTWAMP-Originator" {
+                ip-mtu 1500
+                spoke-sdp 4:2000 {
+                }
+                ipv6 {
+                    address 2001::a:1 {
+                        prefix-length 127
+                    }
+                }
+            }
+            twamp-light {
+                reflector {
+                    admin-state enable
+                    udp-port 64364
+                    prefix 2001::f:0/127 {
+                    }
+                }
+            }
+        }
+    }
+    system {
+        security {
+            user-params {
+                local-user {
+                    user "grpc" {
+                        password telemetry
+                        access {
+                            netconf true
+                            grpc true
+                        }
+                        console {
+                            member ["administrative"]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

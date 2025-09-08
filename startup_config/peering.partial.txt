@@ -1,0 +1,251 @@
+configure {
+    apply-groups ["LLDP-DEFAULT"]
+    groups {
+        group "CONNECTOR" {
+            port "<.*>" {
+                admin-state enable
+                connector {
+                    breakout c1-100g
+                }
+            }
+        }
+        group "LLDP-DEFAULT" {
+            port "<.*>" {
+                ethernet {
+                    lldp {
+                        dest-mac nearest-bridge {
+                            receive true
+                            transmit true
+                            tx-tlvs {
+                                port-desc true
+                                sys-name true
+                                sys-desc true
+                                sys-cap true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        group "NETWORK-INTERFACE" {
+            router "Base" {
+                interface "<to.*>" {
+                    ipv4 {
+                        unnumbered {
+                            system
+                        }
+                    }
+                }
+            }
+        }
+        group "PORT-ACCESS" {
+            port "<.*>" {
+                admin-state enable
+                ethernet {
+                    mode access
+                    encap-type dot1q
+                }
+            }
+        }
+        group "PORT-NETWORK" {
+            port "<.*>" {
+                admin-state enable
+                ethernet {
+                    mode network
+                    encap-type null
+                }
+            }
+        }
+    }
+    card 1 {
+        card-type iom-1
+        mda 1 {
+            mda-type me6-100gb-qsfp28
+        }
+    }
+    log {
+        filter "1001" {
+            named-entry "10" {
+                description "Collect only events of major severity or higher"
+                action forward
+                match {
+                    severity {
+                        gte major
+                    }
+                }
+            }
+        }
+        log-id "99" {
+            description "Default System Log"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+        log-id "100" {
+            description "Default Serious Errors Log"
+            filter "1001"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+    }
+    policy-options {
+        prefix-list "TWAMP-Originator" {
+            prefix 2001::f:0/127 type exact {
+            }
+        }
+        prefix-list "public" {
+            prefix 192.168.200.0/24 type exact {
+            }
+        }
+        policy-statement "export-public" {
+            entry 10 {
+                from {
+                    prefix-list ["public"]
+                    protocol {
+                        name [direct]
+                    }
+                }
+                action {
+                    action-type accept
+                }
+            }
+            entry 20 {
+                from {
+                    prefix-list ["TWAMP-Originator"]
+                    protocol {
+                        name [direct]
+                    }
+                }
+                action {
+                    action-type accept
+                    next-hop 2001::b:1
+                }
+            }
+        }
+    }
+    port 1/1/c1 {
+        admin-state enable
+        connector {
+            breakout c1-100g
+        }
+    }
+    port 1/1/c1/1 {
+        apply-groups ["PORT-ACCESS"]
+    }
+    port 1/1/c2 {
+        admin-state enable
+        connector {
+            breakout c1-100g
+        }
+    }
+    port 1/1/c2/1 {
+        apply-groups ["PORT-ACCESS"]
+    }
+    port 1/1/c3 {
+        admin-state enable
+        connector {
+            breakout c1-100g
+        }
+    }
+    port 1/1/c3/1 {
+        apply-groups ["PORT-ACCESS"]
+    }
+    router "Base" {
+        autonomous-system 65000
+        interface "system" {
+            ipv4 {
+                primary {
+                    address 7.7.7.7
+                    prefix-length 32
+                }
+            }
+        }
+        bgp {
+            group "peering" {
+                next-hop-self true
+                type internal
+                family {
+                    ipv4 true
+                    ipv6 true
+                }
+                export {
+                    policy ["export-public"]
+                }
+            }
+            neighbor "10.10.10.1" {
+                group "peering"
+            }
+        }
+    }
+    service {
+        ies "Peering" {
+            admin-state enable
+            service-id 2000
+            customer "1"
+            interface "toCOI-L3" {
+                sap 1/1/c1/1:1000 {
+                }
+                ipv4 {
+                    primary {
+                        address 10.10.10.2
+                        prefix-length 30
+                    }
+                }
+                ipv6 {
+                    address 2001::b:1 {
+                        prefix-length 127
+                    }
+                }
+            }
+            interface "toInternet" {
+                sap 1/1/c3/1:1000 {
+                }
+                ipv4 {
+                    primary {
+                        address 192.168.200.1
+                        prefix-length 24
+                    }
+                }
+            }
+            interface "toTWAMP-Originator" {
+                sap 1/1/c2/1:1000 {
+                }
+                ipv6 {
+                    address 2001::f:0 {
+                        prefix-length 127
+                    }
+                }
+            }
+        }
+    }
+    system {
+        security {
+            user-params {
+                local-user {
+                    user "grpc" {
+                        password telemetry
+                        access {
+                            netconf true
+                            grpc true
+                        }
+                        console {
+                            member ["administrative"]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

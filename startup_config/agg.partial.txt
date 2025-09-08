@@ -1,0 +1,249 @@
+configure {
+    apply-groups ["LLDP-DEFAULT"]
+    groups {
+        group "CONNECTOR" {
+            port "<.*>" {
+                admin-state enable
+                connector {
+                    breakout c1-100g
+                }
+            }
+        }
+        group "LLDP-DEFAULT" {
+            port "<.*>" {
+                ethernet {
+                    lldp {
+                        dest-mac nearest-bridge {
+                            receive true
+                            transmit true
+                            tx-tlvs {
+                                port-desc true
+                                sys-name true
+                                sys-desc true
+                                sys-cap true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        group "NETWORK-INTERFACE" {
+            router "Base" {
+                interface "<to.*>" {
+                    ipv4 {
+                        unnumbered {
+                            system
+                        }
+                    }
+                }
+            }
+        }
+        group "PORT-ACCESS" {
+            port "<.*>" {
+                admin-state enable
+                ethernet {
+                    mode access
+                    encap-type dot1q
+                }
+            }
+        }
+        group "PORT-NETWORK" {
+            port "<.*>" {
+                admin-state enable
+                ethernet {
+                    mode network
+                    encap-type null
+                }
+            }
+        }
+    }
+    card 1 {
+        card-type imm2-qsfpdd+2-qsfp28+24-sfp28
+        mda 1 {
+            mda-type m2-qsfpdd+2-qsfp28+24-sfp28
+        }
+    }
+    log {
+        filter "1001" {
+            named-entry "10" {
+                description "Collect only events of major severity or higher"
+                action forward
+                match {
+                    severity {
+                        gte major
+                    }
+                }
+            }
+        }
+        log-id "99" {
+            description "Default System Log"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+        log-id "100" {
+            description "Default Serious Errors Log"
+            filter "1001"
+            source {
+                main true
+            }
+            destination {
+                memory {
+                    max-entries 500
+                }
+            }
+        }
+    }
+    port 1/1/c1 {
+        admin-state enable
+        connector {
+            breakout c4-10g
+        }
+    }
+    port 1/1/c1/1 {
+        apply-groups ["PORT-NETWORK"]
+    }
+    port 1/1/c2 {
+        admin-state enable
+        connector {
+            breakout c1-100g
+        }
+    }
+    port 1/1/c2/1 {
+        apply-groups ["PORT-NETWORK"]
+    }
+    port 1/1/c3 {
+    }
+    port 1/1/c4 {
+    }
+    port 1/1/c5 {
+    }
+    port 1/1/c6 {
+    }
+    port 1/1/c7 {
+    }
+    port 1/1/c8 {
+    }
+    port 1/1/c9 {
+    }
+    port 1/1/c10 {
+    }
+    port 1/1/c11 {
+    }
+    port 1/1/c12 {
+    }
+    port 1/1/c13 {
+    }
+    port 1/1/c14 {
+    }
+    port 1/1/c15 {
+    }
+    port 1/1/c16 {
+    }
+    port 1/1/c17 {
+    }
+    port 1/1/c18 {
+    }
+    port 1/1/c19 {
+    }
+    port 1/1/c20 {
+    }
+    port 1/1/c21 {
+    }
+    port 1/1/c22 {
+    }
+    port 1/1/c23 {
+    }
+    port 1/1/c24 {
+    }
+    port 1/1/c25 {
+    }
+    port 1/1/c26 {
+    }
+    port 1/1/c27 {
+    }
+    port 1/1/c28 {
+    }
+    router "Base" {
+        apply-groups ["NETWORK-INTERFACE"]
+        interface "system" {
+            ipv4 {
+                primary {
+                    address 3.3.3.3
+                    prefix-length 32
+                }
+            }
+        }
+        interface "toCPE" {
+            port 1/1/c1/1
+        }
+        interface "toSPE" {
+            port 1/1/c2/1
+        }
+        isis 1 {
+            admin-state enable
+            level-capability 1
+            standard-multi-instance true
+            traffic-engineering true
+            area-address [49.1011.1111.11]
+            interface "system" {
+            }
+            interface "toCPE" {
+                interface-type point-to-point
+            }
+            interface "toSPE" {
+                interface-type point-to-point
+            }
+            level 1 {
+                wide-metrics-only true
+            }
+        }
+        ldp {
+            admin-state enable
+        }
+        mpls {
+            admin-state enable
+            interface "system" {
+            }
+            interface "toCPE" {
+            }
+            interface "toSPE" {
+            }
+            path "FOLLOW-IGP" {
+                admin-state enable
+            }
+        }
+        rsvp {
+            admin-state enable
+            interface "system" {
+            }
+            interface "toCPE" {
+            }
+            interface "toSPE" {
+            }
+        }
+    }
+    system {
+        security {
+            user-params {
+                local-user {
+                    user "grpc" {
+                        password telemetry
+                        access {
+                            netconf true
+                            grpc true
+                        }
+                        console {
+                            member ["administrative"]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

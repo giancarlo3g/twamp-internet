@@ -1,2 +1,2 @@
 #!/bin/bash
-gnmic -a 172.20.20.108 -u grpc -p telemetry --insecure subscribe --path "/state/oam-pm/session[session-name="toCPE"]/ip/twamp-light/statistics/delay/measurement-interval[duration="raw"]/number[mi-number="1"]/bin-type[bin-metric="fd"]/round-trip/average" | grep average
+gnmic -a 172.20.20.108 -u grpc -p telemetry --insecure subscribe --path "/state/oam-pm/session[session-name=toCPE]/ip/twamp-light/statistics/delay/measurement-interval[duration=raw]/number[mi-number=1]/bin-type[bin-metric=fd]/round-trip/average" | grep average
