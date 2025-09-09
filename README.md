@@ -2,7 +2,7 @@
 
 This is a Nokia lab demonstrating TWAMP (Two-Way Active Measurement Protocol) testing between network devices using Nokia SR OS simulators. The lab includes a complete network topology with TWAMP originator and reflector endpoints for performance measurement testing.
 
-![Network Topology](topology.png)
+![Network Topology](topologyv2.png)
 
 ## Overview
 
