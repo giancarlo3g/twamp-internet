@@ -58,8 +58,10 @@ The TWAMP session measures round-trip delay and packet loss between the originat
 - **Destination Address**: `2001::a:1` (CPE Reflector)
 - **UDP Port**: 64364
 - **Test ID**: 100708
-- **Interval**: 10 seconds (10000ms)
+- **Interval**: 1 seconds (1000ms)
 - **Pad Size**: 5 bytes
+- **Measurement Interval**: 5 minutes
+- **Statistics**: log to accounting file but also available via Streaming Telemetry
 
 ### Key Configuration Elements
 
@@ -86,17 +88,21 @@ To retrieve the average round-trip delay from the TWAMP test session, use the pr
 This script uses gNMI to subscribe to TWAMP statistics and extracts the average delay measurement from the originator device.
 
 **Manual gNMI Command:**
+
+First, we get the latest interval-number
 ```bash
-gnmic -a 172.20.20.107 -u grpc -p telemetry --insecure subscribe \
-  --path "/state/oam-pm/session[session-name=toCPE]/ip/twamp-light/statistics/delay/measurement-interval[duration=raw]/number[mi-number=1]/bin-type[bin-metric=fd]/round-trip/average" \
-  | grep average
+$ gnmic -a 172.20.20.107 -u grpc -p telemetry --insecure get --format flat --path "/state/oam-pm/session[session-name=toCPE]/ip/twamp-light/statistics/delay/measurement-interval[duration=5-mins]/newest-index"
+
+state/oam-pm/session[session-name=toCPE]/ip/twamp-light/statistics/delay/measurement-interval[duration=5-mins]/newest-index: 14
+
+$completed=13
 ```
 
-If gnmic does not provide any results, use the debug option:
+For Streaming Telemetry, we choose the previous interval-number that was completed.
 ```bash
-gnmic -a 172.20.20.107 -d -u grpc -p telemetry --insecure subscribe \
-  --path "/state/oam-pm/session[session-name=toCPE]/ip/twamp-light/statistics/delay/measurement-interval[duration=raw]/number[mi-number=1]/bin-type[bin-metric=fd]/round-trip/average" \
-  | grep average
+gnmic -a 172.20.20.107 -u grpc -p telemetry --insecure subscribe --format flat --path "/state/oam-pm/session[session-name=toCPE]/ip/twamp-light/statistics/delay/measurement-interval[duration=5-mins]/number[mi-number=$completed]/bin-type[bin-metric=fd]/round-trip/average"
+
+state/oam-pm/session[session-name=toCPE]/ip/twamp-light/statistics/delay/measurement-interval[duration=5-mins]/number[mi-number=13]/bin-type[bin-metric=fd]/round-trip/average: 9735
 ```
 
 ### Available Metrics
@@ -146,15 +152,16 @@ twamp_coi/
 ### Verification Commands
 
 **Check TWAMP session status on originator:**
+Make sure to choose the latest completed interval, in this example interval-number is 2 and the latest in-progress is always 1.
 ```bash
 ssh admin@originator
 
-A:admin@peering# show oam-pm statistics session "toCPE" twamp-light meas-interval raw 
+A:admin@peering# /show oam-pm statistics session "toCPE" twamp-light meas-interval 5-mins interval-number 2
 
 ------------------------------------------------------------------------------
-Start (UTC)       : 2025/09/11 15:42:05          Status          : in-progress
-Elapsed (seconds) : 783                          Suspect         : yes
-Frames Sent       : 641                          Frames Received : 641
+Start (UTC)       : 2025/09/11 19:50:00          Status          : completed
+Elapsed (seconds) : 300                          Suspect         : no
+Frames Sent       : 300                          Frames Received : 300
 ------------------------------------------------------------------------------
 ===============================================================================
 TWAMP-LIGHT DELAY STATISTICS
@@ -162,15 +169,15 @@ TWAMP-LIGHT DELAY STATISTICS
 ----------------------------------------------------------------------------
 Bin Type     Direction     Minimum (us)   Maximum (us)   Average (us)   EfA
 ----------------------------------------------------------------------------
-FD           Forward               4112          10369           5601    no
-FD           Backward              3039           7901           4371    no
-FD           Round Trip            7554          15000           9973    no
-FDR          Forward                  0           5693           1334    no
-FDR          Backward                 0           4862           1135    no
-FDR          Round Trip               0           6768           2201    no
-IFDV         Forward                  1           4825            674    no
-IFDV         Backward                 0           3898            442    no
-IFDV         Round Trip               3           5839            887    no
+FD           Forward               3815           7802           5373    no
+FD           Backward              3366           7325           4362    no
+FD           Round Trip            7181          12620           9735    no
+FDR          Forward                  0           3987           1498    no
+FDR          Backward                 0           3959            980    no
+FDR          Round Trip               0           5439           2345    no
+IFDV         Forward                  4           2741            516    no
+IFDV         Backward                 6           3801            447    no
+IFDV         Round Trip              13           3518            779    no
 ----------------------------------------------------------------------------
 EfA = yes: one or more bins configured to be Excluded from the Average calc.
 
@@ -179,9 +186,12 @@ Frame Delay (FD) Bin Counts
 ---------------------------------------------------------------
 Bin      Lower Bound       Forward      Backward    Round Trip
 ---------------------------------------------------------------
-0               0 us            74           602             0
-1            5000 us           566            39           383
-2           10000 us             1             0           258
+0               0 us             0             0             0
+1            2000 us             1            47             0
+2            4000 us           269           250             0
+3            6000 us            30             3             1
+4            8000 us             0             0           209
+5           10000 us             0             0            90
 ---------------------------------------------------------------
 
 ---------------------------------------------------------------
@@ -189,8 +199,12 @@ Frame Delay Range (FDR) Bin Counts
 ---------------------------------------------------------------
 Bin      Lower Bound       Forward      Backward    Round Trip
 ---------------------------------------------------------------
-0               0 us           639           641           634
-1            5000 us             2             0             7
+0               0 us           258           294            99
+1            2000 us            42             6           192
+2            4000 us             0             0             9
+3            6000 us             0             0             0
+4            8000 us             0             0             0
+5           10000 us             0             0             0
 ---------------------------------------------------------------
 
 ---------------------------------------------------------------
@@ -198,8 +212,12 @@ Inter-Frame Delay Variation (IFDV) Bin Counts
 ---------------------------------------------------------------
 Bin      Lower Bound       Forward      Backward    Round Trip
 ---------------------------------------------------------------
-0               0 us           640           640           637
-1            5000 us             0             0             3
+0               0 us           295           294           281
+1            2000 us             5             6            19
+2            4000 us             0             0             0
+3            6000 us             0             0             0
+4            8000 us             0             0             0
+5           10000 us             0             0             0
 ---------------------------------------------------------------
 ===============================================================================
 ===============================================================================
