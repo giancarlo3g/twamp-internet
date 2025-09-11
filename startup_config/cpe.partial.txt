@@ -232,18 +232,6 @@ configure {
         }
     }
     service {
-        epipe "CPE-COI" {
-            admin-state enable
-            service-id 3000
-            customer "1"
-            service-mtu 1514
-            spoke-sdp 4:3000 {
-                control-word true
-                vc-type vlan
-            }
-            sap 1/1/c1/1:1000 {
-            }
-        }
         sdp 4 {
             admin-state enable
             delivery-type mpls
@@ -252,36 +240,39 @@ configure {
             }
             lsp "toSPE" { }
         }
+        vpls "Internet-CPE" {
+            admin-state enable
+            service-id 30001
+            customer "1"
+            service-mtu 1514
+            routed-vpls {
+            }
+            spoke-sdp 4:3000 {
+                control-word true
+                vc-type vlan
+            }
+            sap 1/1/c1/1:1000 {
+            }
+        }
         vprn "twamp" {
             admin-state enable
             description "Local VPRN service for TWAMP testing for Internet services"
             service-id 2000
             customer "1"
-            autonomous-system 65100
-            bgp {
-                admin-state enable
-                ebgp-default-reject-policy {
-                    import false
-                }
-                group "twamp" {
-                    next-hop-self true
-                    type external
-                    family {
-                        ipv6 true
-                    }
-                }
-                neighbor "2001::a:0" {
-                    group "twamp"
-                    peer-as 65000
-                }
-            }
             interface "toTWAMP-Originator" {
                 ip-mtu 1500
-                spoke-sdp 4:2000 {
+                vpls "Internet-CPE" {
                 }
                 ipv6 {
                     address 2001::a:1 {
                         prefix-length 127
+                    }
+                }
+            }
+            static-routes {
+                route 2001::f:0/128 route-type unicast {
+                    next-hop "2001::a:0" {
+                        admin-state enable
                     }
                 }
             }

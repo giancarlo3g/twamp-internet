@@ -190,16 +190,6 @@ configure {
             sap 1/1/c2/1:1000 {
             }
         }
-        epipe "twamp" {
-            admin-state enable
-            service-id 2000
-            customer "1"
-            service-mtu 1514
-            spoke-sdp 4:2000 {
-            }
-            sap 1/1/c2/1:2000 {
-            }
-        }
         sdp 4 {
             admin-state enable
             delivery-type mpls

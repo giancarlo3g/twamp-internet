@@ -101,15 +101,15 @@ configure {
     }
     policy-options {
         prefix-list "TWAMP-Originator" {
-            prefix 2001::f:0/127 type exact {
+            prefix 2001::f:0/128 type exact {
             }
         }
-        prefix-list "TWAMP-Reflector" {
-            prefix 2001::a:0/127 type exact {
-            }
-        }
-        prefix-list "customers" {
+        prefix-list "customers-ipv4" {
             prefix 192.168.100.0/29 type exact {
+            }
+        }
+        prefix-list "customers-ipv6" {
+            prefix 2001::a:0/127 type exact {
             }
         }
         prefix-list "public" {
@@ -132,7 +132,7 @@ configure {
         policy-statement "export-customers" {
             entry 10 {
                 from {
-                    prefix-list ["customers"]
+                    prefix-list ["customers-ipv4"]
                     protocol {
                         name [direct]
                     }
@@ -143,7 +143,7 @@ configure {
             }
             entry 20 {
                 from {
-                    prefix-list ["TWAMP-Reflector"]
+                    prefix-list ["customers-ipv6"]
                     protocol {
                         name [direct]
                     }
@@ -221,25 +221,11 @@ configure {
                     policy ["export-customers"]
                 }
             }
-            group "twamp" {
-                next-hop-self true
-                type external
-                family {
-                    ipv6 true
-                }
-                export {
-                    policy ["export-TWAMP-Originator"]
-                }
-            }
             neighbor "10.10.10.2" {
                 group "peering"
             }
             neighbor "192.168.100.2" {
                 group "customer"
-                peer-as 65100
-            }
-            neighbor "2001::a:1" {
-                group "twamp"
                 peer-as 65100
             }
         }
@@ -258,6 +244,11 @@ configure {
                         prefix-length 29
                     }
                 }
+                ipv6 {
+                    address 2001::a:0 {
+                        prefix-length 127
+                    }
+                }
             }
             interface "toPeering" {
                 sap 1/1/c2/1:1000 {
@@ -270,15 +261,6 @@ configure {
                 }
                 ipv6 {
                     address 2001::b:0 {
-                        prefix-length 127
-                    }
-                }
-            }
-            interface "toTWAMP-Reflector" {
-                sap 1/1/c1/1:2000 {
-                }
-                ipv6 {
-                    address 2001::a:0 {
                         prefix-length 127
                     }
                 }
@@ -304,4 +286,3 @@ configure {
         }
     }
 }
-

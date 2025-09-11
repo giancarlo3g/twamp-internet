@@ -2,8 +2,8 @@ name: twamp
 prefix: ""
 
 mgmt:
-  network: net3         # management network name
-  ipv4-subnet: 172.20.20.0/24       # ipv4 range
+  network: net3 # management network name
+  ipv4-subnet: 172.20.20.0/24 # ipv4 range
 
 topology:
   defaults:
@@ -15,32 +15,38 @@ topology:
     linux:
       image: ghcr.io/mfzhsn/network-multitool-sshd:0.0.2
   nodes:
-    ce: #IXR-e2c
+    ce:
+      #IXR-e2c
       kind: nokia_srsim
       type: ixr-e2c
       startup-config: ./startup_config/ce.partial.txt
-      mgmt-ipv4: 172.20.20.101 
-    cpe: #IXR-e2c
+      mgmt-ipv4: 172.20.20.101
+    cpe:
+      #IXR-e2c
       kind: nokia_srsim
-      type: ixr-e2c   
+      type: ixr-e2c
       startup-config: ./startup_config/cpe.partial.txt
       mgmt-ipv4: 172.20.20.102
-    agg: #IXR-e2
+    agg:
+      #IXR-e2
       kind: nokia_srsim
-      type: ixr-e2    
+      type: ixr-e2
       startup-config: ./startup_config/agg.partial.txt
       mgmt-ipv4: 172.20.20.103
-    spe: #SR-1
+    spe:
+      #SR-1
       kind: nokia_srsim
       type: sr-1
       startup-config: ./startup_config/spe.partial.txt
       mgmt-ipv4: 172.20.20.104
-    coi-l2: #SR-1
+    coi-l2:
+      #SR-1
       kind: nokia_srsim
       type: sr-1
       startup-config: ./startup_config/coi-l2.partial.txt
       mgmt-ipv4: 172.20.20.105
-    coi-l3: #SR-1
+    coi-l3:
+      #SR-1
       kind: nokia_srsim
       type: sr-1
       startup-config: ./startup_config/coi-l3.partial.txt
@@ -49,40 +55,34 @@ topology:
         - 50601:22
         - 50602:57400
         - 50603:830
-    peering: #SR-1
+    peering:
+      #SR-1
       kind: nokia_srsim
       type: sr-1
       startup-config: ./startup_config/peering.partial.txt
       mgmt-ipv4: 172.20.20.107
-    originator: #IXR-e2
-      kind: nokia_srsim
-      type: ixr-e2   
-      startup-config: ./startup_config/originator.partial.txt
-      mgmt-ipv4: 172.20.20.108
     tester1:
       kind: linux
       exec:
         - ip link add link eth1 name eth1.1000 type vlan id 1000
         - ifconfig eth1.1000 172.16.0.2
-        - ifconfig eth1.1000 netmask 255.255.255.0 
+        - ifconfig eth1.1000 netmask 255.255.255.0
         - route add default gw 172.16.0.1 eth1.1000
     tester2:
       kind: linux
       exec:
         - ip link add link eth1 name eth1.1000 type vlan id 1000
         - ifconfig eth1.1000 192.168.200.2
-        - ifconfig eth1.1000 netmask 255.255.255.0 
+        - ifconfig eth1.1000 netmask 255.255.255.0
         - route add default gw 192.168.200.1 eth1.1000
 
   links:
-  #Connections of the first ring 
-    - endpoints: ["tester1:eth1", "ce:1/1/c1/1"]
-    - endpoints: ["ce:1/1/c2/1", "cpe:1/1/c1/1"]
-    - endpoints: ["cpe:1/1/c2/1", "agg:1/1/c1/1"]
-    - endpoints: ["agg:1/1/c2/1", "spe:1/1/c1/1"]
-    - endpoints: ["spe:1/1/c2/1", "coi-l2:1/1/c1/1"]
-    - endpoints: ["coi-l2:1/1/c2/1", "coi-l3:1/1/c1/1"]
-    - endpoints: ["coi-l3:1/1/c2/1", "peering:1/1/c1/1"]
-    - endpoints: ["peering:1/1/c2/1", "originator:1/1/c1/1"]
-    - endpoints: ["peering:1/1/c3/1", "tester2:eth1"]
-
+    #Connections of the first ring 
+    - endpoints: [ tester1:eth1, ce:1/1/c1/1 ]
+    - endpoints: [ ce:1/1/c2/1, cpe:1/1/c1/1 ]
+    - endpoints: [ cpe:1/1/c2/1, agg:1/1/c1/1 ]
+    - endpoints: [ agg:1/1/c2/1, spe:1/1/c1/1 ]
+    - endpoints: [ spe:1/1/c2/1, coi-l2:1/1/c1/1 ]
+    - endpoints: [ coi-l2:1/1/c2/1, coi-l3:1/1/c1/1 ]
+    - endpoints: [ coi-l3:1/1/c2/1, peering:1/1/c1/1 ]
+    - endpoints: [ peering:1/1/c3/1, tester2:eth1 ]

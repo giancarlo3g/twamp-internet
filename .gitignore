@@ -2,3 +2,5 @@ clab-twamp/*
 *.bak
 *.pcap
 *.drawio
+*_original/*
+config/*

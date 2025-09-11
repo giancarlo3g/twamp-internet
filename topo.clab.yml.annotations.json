@@ -88,18 +88,6 @@
       }
     },
     {
-      "id": "originator",
-      "icon": "router",
-      "position": {
-        "x": 763,
-        "y": 329
-      },
-      "geoCoordinates": {
-        "lat": 49.183679813287206,
-        "lng": 9.741285268582844
-      }
-    },
-    {
       "id": "tester1",
       "icon": "router",
       "position": {
