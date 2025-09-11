@@ -64,6 +64,20 @@ configure {
         }
     }
     log {
+        accounting-policy 10 {
+            admin-state enable
+            record complete-pm
+            destination {
+                file "ACCT-POLICY-10"
+            }
+        }
+        file "ACCT-POLICY-10" {
+            rollover 15
+            retention 4
+            compact-flash-location {
+                primary cf3
+            }
+        }
         filter "1001" {
             named-entry "10" {
                 description "Collect only events of major severity or higher"
@@ -100,7 +114,62 @@ configure {
         }
     }
     oam-pm {
+        bin-group 60 {
+            admin-state enable
+            bin-type fd {
+                bin 1 {
+                    lower-bound 2000
+                }
+                bin 2 {
+                    lower-bound 4000
+                }
+                bin 3 {
+                    lower-bound 6000
+                }
+                bin 4 {
+                    lower-bound 8000
+                }
+                bin 5 {
+                    lower-bound 10000
+                }
+            }
+            bin-type fdr {
+                bin 1 {
+                    lower-bound 2000
+                }
+                bin 2 {
+                    lower-bound 4000
+                }
+                bin 3 {
+                    lower-bound 6000
+                }
+                bin 4 {
+                    lower-bound 8000
+                }
+                bin 5 {
+                    lower-bound 10000
+                }
+            }
+            bin-type ifdv {
+                bin 1 {
+                    lower-bound 2000
+                }
+                bin 2 {
+                    lower-bound 4000
+                }
+                bin 3 {
+                    lower-bound 6000
+                }
+                bin 4 {
+                    lower-bound 8000
+                }
+                bin 5 {
+                    lower-bound 10000
+                }
+            }
+        }
         session "toCPE" {
+            bin-group 60
             ip {
                 destination 2001::a:1
                 destination-udp-port 64364
@@ -116,6 +185,9 @@ configure {
                         hli-force-count true
                     }
                 }
+            }
+            measurement-interval 5-mins {
+                accounting-policy 10
             }
         }
         streaming {
