@@ -99,6 +99,36 @@ configure {
             }
         }
     }
+    oam-pm {
+        session "toPeering" {
+            ip {
+                destination 2001::f:1
+                destination-udp-port 64364
+                router-instance "twamp"
+                source 2001::a:1
+                twamp-light {
+                    admin-state enable
+                    test-id 100708
+                    interval 10000
+                    pad-size 5
+                    delay-template "LINK-DELAY-TEMPLATE"
+                    loss {
+                        hli-force-count true
+                    }
+                }
+            }
+        }
+        streaming {
+            delay-template "LINK-DELAY-TEMPLATE" {
+                admin-state enable
+                sample-window 15
+                window-integrity 10
+                fd-avg forward { }
+                fd-avg backward { }
+                fd-avg round-trip { }
+            }
+        }
+    }
     port 1/1/c1 {
         admin-state enable
         connector {
@@ -115,7 +145,7 @@ configure {
         }
     }
     port 1/1/c2/1 {
-        apply-groups ["PORT-NETWORK"]
+        apply-groups ["PORT-ACCESS"]
     }
     port 1/1/c3 {
     }
@@ -142,84 +172,57 @@ configure {
     port 1/1/c14 {
     }
     router "Base" {
-        apply-groups ["NETWORK-INTERFACE"]
         interface "system" {
             ipv4 {
                 primary {
-                    address 2.2.2.2
+                    address 9.9.9.9
                     prefix-length 32
                 }
             }
         }
-        interface "toAGG" {
-            port 1/1/c2/1
-        }
-        isis 1 {
-            admin-state enable
-            level-capability 1
-            standard-multi-instance true
-            traffic-engineering true
-            area-address [49.1011.1111.11]
-            interface "system" {
-            }
-            interface "toAGG" {
-                interface-type point-to-point
-            }
-            level 1 {
-                wide-metrics-only true
-            }
-        }
-        ldp {
-            admin-state enable
-        }
-        mpls {
-            admin-state enable
-            interface "system" {
-            }
-            interface "toAGG" {
-            }
-            path "FOLLOW-IGP" {
-                admin-state enable
-            }
-            lsp "toSPE" {
-                admin-state enable
-                type p2p-rsvp
-                to 4.4.4.4
-                path-computation-method local-cspf
-                fast-reroute {
-                    frr-method facility
-                }
-                primary "FOLLOW-IGP" {
-                }
-            }
-        }
-        rsvp {
-            admin-state enable
-            interface "system" {
-            }
-            interface "toAGG" {
-            }
-        }
     }
     service {
-        sdp 4 {
+        vpls "Internet-NID" {
             admin-state enable
-            delivery-type mpls
-            far-end {
-                ip-address 4.4.4.4
-            }
-            lsp "toSPE" { }
-        }
-        epipe "Internet-CPE" {
-            admin-state enable
-            service-id 30001
+            service-id 3002
             customer "1"
             service-mtu 1514
-            spoke-sdp 4:3000 {
-                control-word true
-                vc-type vlan
+            routed-vpls {
+            }
+            sap 1/1/c2/1:1000 {
             }
             sap 1/1/c1/1:1000 {
+            }
+        }
+        vprn "twamp" {
+            admin-state enable
+            description "Local VPRN service for TWAMP testing for Internet services"
+            service-id 2000
+            customer "1"
+            interface "toTWAMP-Originator" {
+                ip-mtu 1500
+                vpls "Internet-NID" {
+                }
+                ipv6 {
+                    address 2001::a:1 {
+                        prefix-length 127
+                    }
+                }
+            }
+            static-routes {
+                route 2001::f:0/128 route-type unicast {
+                    next-hop "2001::a:0" {
+                        admin-state enable
+                    }
+                }
+            }
+            twamp-light {
+                reflector {
+                    admin-state enable
+                    udp-port 64364
+                    prefix 2001::f:0/127 {
+                    }
+                }
             }
         }
     }

@@ -25,6 +25,16 @@ topology:
         graph-posX: "865"
         graph-posY: "335"
         graph-groupLabelPos: bottom-center
+    nid:
+      #IXR-e2c
+      kind: nokia_srsim
+      type: ixr-e2c
+      startup-config: ./startup_config/nid.partial.txt
+      mgmt-ipv4: 172.20.20.109
+      labels:
+        graph-posX: "865"
+        graph-posY: "335"
+        graph-groupLabelPos: bottom-center
     cpe:
       #IXR-e2c
       kind: nokia_srsim
@@ -115,7 +125,8 @@ topology:
   links:
     #Connections of the first ring 
     - endpoints: [ tester1:eth1, ce:1/1/c1/1 ]
-    - endpoints: [ ce:1/1/c2/1, cpe:1/1/c1/1 ]
+    - endpoints: [ ce:1/1/c2/1, nid:1/1/c1/1 ]
+    - endpoints: [ nid:1/1/c2/1, cpe:1/1/c1/1 ]
     - endpoints: [ cpe:1/1/c2/1, agg:1/1/c1/1 ]
     - endpoints: [ agg:1/1/c2/1, spe:1/1/c1/1 ]
     - endpoints: [ spe:1/1/c2/1, coi-l2:1/1/c1/1 ]
