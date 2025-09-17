@@ -21,30 +21,50 @@ topology:
       type: ixr-e2c
       startup-config: ./startup_config/ce.partial.txt
       mgmt-ipv4: 172.20.20.101
+      labels:
+        graph-posX: "865"
+        graph-posY: "335"
+        graph-groupLabelPos: bottom-center
     cpe:
       #IXR-e2c
       kind: nokia_srsim
       type: ixr-e2c
       startup-config: ./startup_config/cpe.partial.txt
       mgmt-ipv4: 172.20.20.102
+      labels:
+        graph-posX: "865"
+        graph-posY: "255"
+        graph-groupLabelPos: bottom-center
     agg:
       #IXR-e2
       kind: nokia_srsim
       type: ixr-e2
       startup-config: ./startup_config/agg.partial.txt
       mgmt-ipv4: 172.20.20.103
+      labels:
+        graph-posX: "975"
+        graph-posY: "255"
+        graph-groupLabelPos: bottom-center
     spe:
       #SR-1
       kind: nokia_srsim
       type: sr-1
       startup-config: ./startup_config/spe.partial.txt
       mgmt-ipv4: 172.20.20.104
+      labels:
+        graph-posX: "1065"
+        graph-posY: "255"
+        graph-groupLabelPos: bottom-center
     coi-l2:
       #SR-1
       kind: nokia_srsim
       type: sr-1
       startup-config: ./startup_config/coi-l2.partial.txt
       mgmt-ipv4: 172.20.20.105
+      labels:
+        graph-posX: "1165"
+        graph-posY: "255"
+        graph-groupLabelPos: bottom-center
     coi-l3:
       #SR-1
       kind: nokia_srsim
@@ -55,12 +75,20 @@ topology:
         - 50601:22
         - 50602:57400
         - 50603:830
+      labels:
+        graph-posX: "1295"
+        graph-posY: "255"
+        graph-groupLabelPos: bottom-center
     peering:
       #SR-1
       kind: nokia_srsim
       type: sr-1
       startup-config: ./startup_config/peering.partial.txt
       mgmt-ipv4: 172.20.20.107
+      labels:
+        graph-posX: "1415"
+        graph-posY: "255"
+        graph-groupLabelPos: bottom-center
     tester1:
       kind: linux
       exec:
@@ -68,6 +96,10 @@ topology:
         - ifconfig eth1.1000 172.16.0.2
         - ifconfig eth1.1000 netmask 255.255.255.0
         - route add default gw 172.16.0.1 eth1.1000
+      labels:
+        graph-posX: "865"
+        graph-posY: "425"
+        graph-groupLabelPos: bottom-center
     tester2:
       kind: linux
       exec:
@@ -75,6 +107,10 @@ topology:
         - ifconfig eth1.1000 192.168.200.2
         - ifconfig eth1.1000 netmask 255.255.255.0
         - route add default gw 192.168.200.1 eth1.1000
+      labels:
+        graph-posX: "1415"
+        graph-posY: "335"
+        graph-groupLabelPos: bottom-center
 
   links:
     #Connections of the first ring 
