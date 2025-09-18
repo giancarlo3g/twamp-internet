@@ -2,27 +2,28 @@
 
 This is a Nokia lab demonstrating TWAMP (Two-Way Active Measurement Protocol) testing between network devices using Nokia SR OS simulators. The lab includes a complete network topology with TWAMP originator and reflector endpoints for performance measurement testing.
 
-![Network Topology](topologyv3.png)
+![Network Topology](./topology/topologyv4.png)
 
 ## Overview
 
 The lab implements a TWAMP test scenario where:
-- **Originator**: Peering Router (7750 SR-1) initiates TWAMP tests
-- **CPE (Reflector)**: Nokia IXR-e2c device that reflects TWAMP packets back to the originator
-- **Network Path**: Complete L2/L3 network infrastructure between originator and CPE
+- **NID (Originator)**: Nokia IXR-e2c device that initiates TWAMP tests
+- **Reflector**: Peering Router (7750 SR-1) reflects TWAMP packets back to the originator
+- **Network Path**: Complete L2/L3 network infrastructure between originator and CPE. NID runs a local L2 service with no MPLS.
 
-The TWAMP session measures round-trip delay and packet loss between the originator (172.20.20.108) and CPE endpoints through a realistic network topology including aggregation, service provider edge, and core networking elements.
+The TWAMP session measures round-trip delay and packet loss between the originator (172.20.20.109) and reflector (172.20.20.107) endpoints through a realistic network topology including aggregation, service provider edge, and core networking elements.
 
 ## Lab Components
 
 ### Network Devices
 - **ce**: Customer Edge (Nokia IXR-e2c)
-- **cpe**: Customer Premises Equipment (Nokia IXR-e2c) - TWAMP Reflector
+- **nid**: Network demarcation device (Nokia IXR-e2c) - TWAMP originator
+- **cpe**: Customer Premises Equipment (Nokia IXR-e2c)
 - **agg**: Aggregation Router (Nokia IXR-e2)
 - **spe**: Service Provider Edge (Nokia SR-1)
 - **coi-l2**: Core of Internet L2 (Nokia SR-1)
 - **coi-l3**: Core of Internet L3 (Nokia SR-1)
-- **peering**: Peering Router (Nokia SR-1)
+- **peering**: Peering Router (Nokia SR-1) - TWAMP reflector
 
 ### Test Endpoints
 - **tester1**: Linux host (172.16.0.2) connected to CE
@@ -52,10 +53,10 @@ The TWAMP session measures round-trip delay and packet loss between the originat
 ## TWAMP Configuration
 
 ### TWAMP Session Details
-- **Session Name**: `toCPE`
-- **Test Direction**: Peering Router (172.20.20.107) → CPE (172.20.20.102)
-- **Source Address**: `2001::f:0` (Originator)
-- **Destination Address**: `2001::a:1` (CPE Reflector)
+- **Session Name**: `toPeering`
+- **Test Direction**: NID (172.20.20.109) → Peering router (172.20.20.107)
+- **Source Address**: `2001::a:1` (NID Originator)
+- **Destination Address**: `2001::f:0` (Peering Reflector)
 - **UDP Port**: 64364
 - **Test ID**: 100708
 - **Interval**: 1 seconds (1000ms)
@@ -91,7 +92,7 @@ This script uses gNMI to subscribe to TWAMP statistics and extracts the average 
 
 First, we get the latest interval-number
 ```bash
-$ gnmic -a 172.20.20.107 -u grpc -p telemetry --insecure get --format flat --path "/state/oam-pm/session[session-name=toCPE]/ip/twamp-light/statistics/delay/measurement-interval[duration=5-mins]/newest-index"
+$ gnmic -a 172.20.20.1079 -u grpc -p telemetry --insecure get --format flat --path "/state/oam-pm/session[session-name=toCPE]/ip/twamp-light/statistics/delay/measurement-interval[duration=5-mins]/newest-index"
 
 state/oam-pm/session[session-name=toCPE]/ip/twamp-light/statistics/delay/measurement-interval[duration=5-mins]/newest-index: 14
 
@@ -100,9 +101,9 @@ $completed=13
 
 For Streaming Telemetry, we choose the previous interval-number that was completed.
 ```bash
-gnmic -a 172.20.20.107 -u grpc -p telemetry --insecure subscribe --format flat --path "/state/oam-pm/session[session-name=toCPE]/ip/twamp-light/statistics/delay/measurement-interval[duration=5-mins]/number[mi-number=$completed]/bin-type[bin-metric=fd]/round-trip/average"
+gnmic -a 172.20.20.109 -u grpc -p telemetry --insecure subscribe --format flat --path "/state/oam-pm/session[session-name=toPeering]/ip/twamp-light/statistics/delay/measurement-interval[duration=5-mins]/number[mi-number=$completed]/bin-type[bin-metric=fd]/round-trip/average"
 
-state/oam-pm/session[session-name=toCPE]/ip/twamp-light/statistics/delay/measurement-interval[duration=5-mins]/number[mi-number=13]/bin-type[bin-metric=fd]/round-trip/average: 9735
+state/oam-pm/session[session-name=toPeering]/ip/twamp-light/statistics/delay/measurement-interval[duration=5-mins]/number[mi-number=13]/bin-type[bin-metric=fd]/round-trip/average: 9735
 ```
 
 ### Available Metrics
@@ -135,8 +136,8 @@ twamp_coi/
 ├── gnmic_twamp.sh             # TWAMP statistics collection script
 ├── save_config.sh             # Configuration backup script
 ├── startup_config/            # Device startup configurations
-│   ├── peering.partial.txt    # TWAMP originator config
-│   ├── cpe.partial.txt        # TWAMP reflector config
+│   ├── peering.partial.txt    # TWAMP reflector config
+│   ├── nid.partial.txt        # TWAMP originator config
 │   └── *.partial.txt          # Other device 
 ```
 
@@ -154,12 +155,12 @@ twamp_coi/
 **Check TWAMP session status on originator:**
 Make sure to choose the latest completed interval, in this example interval-number is 2 and the latest in-progress is always 1.
 ```bash
-ssh admin@originator
+ssh admin@nid
 
-A:admin@peering# /show oam-pm statistics session "toCPE" twamp-light meas-interval 5-mins interval-number 2
+A:admin@nid# /show oam-pm statistics session "toPeering" twamp-light meas-interval 5-mins interval-number 2
 
 ------------------------------------------------------------------------------
-Start (UTC)       : 2025/09/11 19:50:00          Status          : completed
+Start (UTC)       : 2025/09/18 16:30:00          Status          : completed
 Elapsed (seconds) : 300                          Suspect         : no
 Frames Sent       : 300                          Frames Received : 300
 ------------------------------------------------------------------------------
@@ -169,16 +170,17 @@ TWAMP-LIGHT DELAY STATISTICS
 ----------------------------------------------------------------------------
 Bin Type     Direction     Minimum (us)   Maximum (us)   Average (us)   EfA
 ----------------------------------------------------------------------------
-FD           Forward               3815           7802           5373    no
-FD           Backward              3366           7325           4362    no
-FD           Round Trip            7181          12620           9735    no
-FDR          Forward                  0           3987           1498    no
-FDR          Backward                 0           3959            980    no
-FDR          Round Trip               0           5439           2345    no
-IFDV         Forward                  4           2741            516    no
-IFDV         Backward                 6           3801            447    no
-IFDV         Round Trip              13           3518            779    no
+FD           Forward               4302           8267           5583    no
+FD           Backward              3908           6768           5217    no
+FD           Round Trip            8731          13356          10801    no
+FDR          Forward                  0           3965           1273    no
+FDR          Backward                 0           2830           1289    no
+FDR          Round Trip             224           4849           2294    no
+IFDV         Forward                  2           2453            532    no
+IFDV         Backward                 3           1470            479    no
+IFDV         Round Trip               3           3045            830    no
 ----------------------------------------------------------------------------
+
 EfA = yes: one or more bins configured to be Excluded from the Average calc.
 
 ---------------------------------------------------------------
@@ -187,11 +189,11 @@ Frame Delay (FD) Bin Counts
 Bin      Lower Bound       Forward      Backward    Round Trip
 ---------------------------------------------------------------
 0               0 us             0             0             0
-1            2000 us             1            47             0
-2            4000 us           269           250             0
-3            6000 us            30             3             1
-4            8000 us             0             0           209
-5           10000 us             0             0            90
+1            2000 us             0             1             0
+2            4000 us           256           283             0
+3            6000 us            43            16             0
+4            8000 us             1             0            40
+5           10000 us             0             0           260
 ---------------------------------------------------------------
 
 ---------------------------------------------------------------
@@ -199,9 +201,9 @@ Frame Delay Range (FDR) Bin Counts
 ---------------------------------------------------------------
 Bin      Lower Bound       Forward      Backward    Round Trip
 ---------------------------------------------------------------
-0               0 us           258           294            99
-1            2000 us            42             6           192
-2            4000 us             0             0             9
+0               0 us           279           280           102
+1            2000 us            21            20           190
+2            4000 us             0             0             8
 3            6000 us             0             0             0
 4            8000 us             0             0             0
 5           10000 us             0             0             0
@@ -212,8 +214,8 @@ Inter-Frame Delay Variation (IFDV) Bin Counts
 ---------------------------------------------------------------
 Bin      Lower Bound       Forward      Backward    Round Trip
 ---------------------------------------------------------------
-0               0 us           295           294           281
-1            2000 us             5             6            19
+0               0 us           297           300           287
+1            2000 us             3             0            13
 2            4000 us             0             0             0
 3            6000 us             0             0             0
 4            8000 us             0             0             0
@@ -225,10 +227,11 @@ TWAMP-LIGHT LOSS STATISTICS: NONE
 ===============================================================================
 ```
 
-**Verify TWAMP reflector on CPE:**
+**Verify TWAMP reflector on Peering router:**
 ```bash
-ssh admin@cpe
-A:admin@cpe# show router service-name twamp twamp-light 
+ssh admin@peering
+
+A:admin@peering# /show router twamp-light 
 
 -------------------------------------------------------------------------------
 TWAMP-Light Reflector
@@ -236,8 +239,8 @@ TWAMP-Light Reflector
 Admin State          : Up                      UDP Port         : 64364
 IPv6 UDP Checksum 0  : Disallow                
 Description          : (Not Specified)
-Up Time              : 0d 00:13:27             
-Test Frames Received : 667                     Test Frames Sent : 667
+Up Time              : 0d 19:40:09             
+Test Frames Received : 70716                   Test Frames Sent : 70716
 Type                 : TWAMP-Light             
 -------------------------------------------------------------------------------
 
@@ -246,27 +249,44 @@ TWAMP-Light Reflector Prefixes
 -------------------------------------------------------------------------------
 Prefix                                      Description
 -------------------------------------------------------------------------------
-2001::f:0/127                               
+2001::a:0/127                               
 -------------------------------------------------------------------------------
 No. of TWAMP-Light Reflector Prefixes: 1
 -------------------------------------------------------------------------------
 ```
 
 **Test network connectivity:**
-IPv6 ping from Peering to CPE
+IPv6 ping between originator and reflector
 ```bash
-ssh admin@originator
+ssh admin@peering
+
 A:admin@peering# ping 2001::a:1 source-address 2001::f:0
 PING 2001::a:1 56 data bytes
-64 bytes from 2001::a:1 icmp_seq=1 hlim=63 time=8.96ms.
-64 bytes from 2001::a:1 icmp_seq=2 hlim=63 time=9.36ms.
-64 bytes from 2001::a:1 icmp_seq=3 hlim=63 time=10.2ms.
-64 bytes from 2001::a:1 icmp_seq=4 hlim=63 time=9.09ms.
-64 bytes from 2001::a:1 icmp_seq=5 hlim=63 time=9.38ms.
+64 bytes from 2001::a:1 icmp_seq=1 hlim=63 time=10.4ms.
+64 bytes from 2001::a:1 icmp_seq=2 hlim=63 time=10.5ms.
+64 bytes from 2001::a:1 icmp_seq=3 hlim=63 time=10.4ms.
+64 bytes from 2001::a:1 icmp_seq=4 hlim=63 time=9.55ms.
+64 bytes from 2001::a:1 icmp_seq=5 hlim=63 time=7.84ms.
 
 ---- 2001::a:1 PING Statistics ----
 5 packets transmitted, 5 packets received, 0.00% packet loss
-round-trip min = 8.96ms, avg = 9.39ms, max = 10.2ms, stddev = 0.416ms
+round-trip min = 7.84ms, avg = 9.75ms, max = 10.5ms, stddev = 1.02ms
+```
+
+```bash
+ssh admin@nid
+
+A:admin@nid# /ping 2001::f:0 source-address 2001::a:1 router-instance "twamp" 
+PING 2001::f:0 56 data bytes
+64 bytes from 2001::f:0 icmp_seq=1 hlim=63 time=10.8ms.
+64 bytes from 2001::f:0 icmp_seq=2 hlim=63 time=11.0ms.
+64 bytes from 2001::f:0 icmp_seq=3 hlim=63 time=10.1ms.
+64 bytes from 2001::f:0 icmp_seq=4 hlim=63 time=11.0ms.
+64 bytes from 2001::f:0 icmp_seq=5 hlim=63 time=9.43ms.
+
+---- 2001::f:0 PING Statistics ----
+5 packets transmitted, 5 packets received, 0.00% packet loss
+round-trip min = 9.43ms, avg = 10.5ms, max = 11.0ms, stddev = 0.623ms
 ```
 
 ## Save configurations
