@@ -202,14 +202,6 @@ configure {
         }
     }
     service {
-        sdp 4 {
-            admin-state enable
-            delivery-type mpls
-            far-end {
-                ip-address 4.4.4.4
-            }
-            lsp "toSPE" { }
-        }
         epipe "Internet-CPE" {
             admin-state enable
             service-id 30001
@@ -221,6 +213,14 @@ configure {
             }
             sap 1/1/c1/1:1000 {
             }
+        }
+        sdp 4 {
+            admin-state enable
+            delivery-type mpls
+            far-end {
+                ip-address 4.4.4.4
+            }
+            lsp "toSPE" { }
         }
     }
     system {

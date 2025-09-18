@@ -64,6 +64,20 @@ configure {
         }
     }
     log {
+        accounting-policy 10 {
+            admin-state enable
+            record complete-pm
+            destination {
+                file "ACCT-POLICY-10"
+            }
+        }
+        file "ACCT-POLICY-10" {
+            rollover 15
+            retention 4
+            compact-flash-location {
+                primary cf3
+            }
+        }
         filter "1001" {
             named-entry "10" {
                 description "Collect only events of major severity or higher"
@@ -100,22 +114,80 @@ configure {
         }
     }
     oam-pm {
+        bin-group 60 {
+            admin-state enable
+            bin-type fd {
+                bin 1 {
+                    lower-bound 2000
+                }
+                bin 2 {
+                    lower-bound 4000
+                }
+                bin 3 {
+                    lower-bound 6000
+                }
+                bin 4 {
+                    lower-bound 8000
+                }
+                bin 5 {
+                    lower-bound 10000
+                }
+            }
+            bin-type fdr {
+                bin 1 {
+                    lower-bound 2000
+                }
+                bin 2 {
+                    lower-bound 4000
+                }
+                bin 3 {
+                    lower-bound 6000
+                }
+                bin 4 {
+                    lower-bound 8000
+                }
+                bin 5 {
+                    lower-bound 10000
+                }
+            }
+            bin-type ifdv {
+                bin 1 {
+                    lower-bound 2000
+                }
+                bin 2 {
+                    lower-bound 4000
+                }
+                bin 3 {
+                    lower-bound 6000
+                }
+                bin 4 {
+                    lower-bound 8000
+                }
+                bin 5 {
+                    lower-bound 10000
+                }
+            }
+        }
         session "toPeering" {
+            bin-group 60
             ip {
-                destination 2001::f:1
+                destination 2001::f:0
                 destination-udp-port 64364
                 router-instance "twamp"
                 source 2001::a:1
                 twamp-light {
                     admin-state enable
                     test-id 100708
-                    interval 10000
+                    interval 1000
                     pad-size 5
                     delay-template "LINK-DELAY-TEMPLATE"
                     loss {
                         hli-force-count true
                     }
                 }
+            }
+            measurement-interval 5-mins {
+                accounting-policy 10
             }
         }
         streaming {
@@ -189,9 +261,9 @@ configure {
             service-mtu 1514
             routed-vpls {
             }
-            sap 1/1/c2/1:1000 {
-            }
             sap 1/1/c1/1:1000 {
+            }
+            sap 1/1/c2/1:1000 {
             }
         }
         vprn "twamp" {
@@ -213,14 +285,6 @@ configure {
                 route 2001::f:0/128 route-type unicast {
                     next-hop "2001::a:0" {
                         admin-state enable
-                    }
-                }
-            }
-            twamp-light {
-                reflector {
-                    admin-state enable
-                    udp-port 64364
-                    prefix 2001::f:0/127 {
                     }
                 }
             }
