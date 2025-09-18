@@ -2,7 +2,7 @@
 
 This is a Nokia lab demonstrating TWAMP (Two-Way Active Measurement Protocol) testing between network devices using Nokia SR OS simulators. The lab includes a complete network topology with TWAMP originator and reflector endpoints for performance measurement testing.
 
-![Network Topology](topologyv3.png)
+![Network Topology](./topology/topologyv3.png)
 
 ## Overview
 
@@ -11,7 +11,7 @@ The lab implements a TWAMP test scenario where:
 - **CPE (Reflector)**: Nokia IXR-e2c device that reflects TWAMP packets back to the originator
 - **Network Path**: Complete L2/L3 network infrastructure between originator and CPE
 
-The TWAMP session measures round-trip delay and packet loss between the originator (172.20.20.108) and CPE endpoints through a realistic network topology including aggregation, service provider edge, and core networking elements.
+The TWAMP session measures round-trip delay and packet loss between the originator (172.20.20.107) and CPE endpoints through a realistic network topology including aggregation, service provider edge, and core networking elements.
 
 ## Lab Components
 
@@ -22,7 +22,7 @@ The TWAMP session measures round-trip delay and packet loss between the originat
 - **spe**: Service Provider Edge (Nokia SR-1)
 - **coi-l2**: Core of Internet L2 (Nokia SR-1)
 - **coi-l3**: Core of Internet L3 (Nokia SR-1)
-- **peering**: Peering Router (Nokia SR-1)
+- **peering**: Peering Router (Nokia SR-1) - TWAMP Originator
 
 ### Test Endpoints
 - **tester1**: Linux host (172.16.0.2) connected to CE
